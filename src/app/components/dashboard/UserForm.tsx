@@ -11,7 +11,6 @@ const UserForm: React.FC<UserFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    console.log(`Field changed: ${name}, Value: ${value}`); // Debugging
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -53,7 +52,7 @@ const UserForm: React.FC<UserFormProps> = ({
           required
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
         >
-          <option value="" disabled>Select Role</option> {/* Disabled option */}
+          <option value="" disabled>Select Role</option> 
           <option value="Owner">Owner</option>
           <option value="Admin">Admin</option>
           <option value="User">User</option>
