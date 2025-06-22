@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-type SnackbarType = 'success' | 'error' | 'info';
+type SnackbarType = 'success' | 'error' | 'info' | 'warning';
 
 export function useSnackbar() {
   const [snackbar, setSnackbar] = useState<{ message: string; type: SnackbarType } | null>(null);

@@ -1,4 +1,3 @@
-
 interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
@@ -7,7 +6,7 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded shadow-md w-96 relative">
+      <div className="bg-gray-100 text-gray-900 p-6 rounded shadow-md w-96 relative">
         {children}
         <button
           onClick={onClose}

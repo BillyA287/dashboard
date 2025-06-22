@@ -1,72 +1,95 @@
 'use client';
 
 import { useState } from 'react';
-import UserTable from './userTable';
-import UserForm from './userForm';
-import Modal from './modal';
-import { useUsers } from '../../hooks/useUsers';
+import UserTable from './UserTable';
+import UserForm from './UserForm';
+import Modal from './Modal';
+import Snackbar from '../SnackBar/SnackBar';
+import SearchBar from '../SearchBar/SearchBar';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import type { User } from '../../types/types';
+import { addUser, updateUser, deleteUser } from '../../utils/api';
+import type { User, UserDashboardProps } from '../../types/types';
 
-export default function UserDashboard() {
-  const { users, setUsers, loading } = useUsers(); // Use the custom hook for fetching users
-  const { snackbar, showSnackbar } = useSnackbar(); // Use the custom hook for snackbar notifications
+export default function UserDashboard({ initialUsers = [] }: UserDashboardProps) {
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<keyof User>('name'); // Sorting state
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Sorting state
+  const { snackbar, showSnackbar } = useSnackbar();
   const [formData, setFormData] = useState<Omit<User, 'id'>>({ name: '', email: '', role: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+
+  // Filter users based on search
+  const filteredUsers: User[] = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.role.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Sort users based on sortKey and sortOrder
+  const sortedUsers: User[] = [...filteredUsers].sort((a, b) => {
+    const valueA = a[sortKey].toLowerCase();
+    const valueB = b[sortKey].toLowerCase();
+
+    if (valueA < valueB) return sortOrder === 'asc' ? -1 : 1;
+    if (valueA > valueB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (key: keyof User): void => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
 
   const handleSubmit = async (): Promise<void> => {
-    const method: 'PUT' | 'POST' = editingId ? 'PUT' : 'POST';
-    const endpoint = editingId ? `/api/users/${editingId}` : '/api/users'; // Use the correct endpoint
-    const body: User | Omit<User, 'id'> = editingId ? { ...formData, id: editingId } : formData;
-
-    // Check if the user details have changed
-    if (editingId) {
-      const originalUser: User | undefined = users.find((u: User) => u.id === editingId);
-      if (
-        originalUser &&
-        originalUser.name === formData.name &&
-        originalUser.email === formData.email &&
-        originalUser.role === formData.role
-      ) {
-        // No changes detected
-        setShowModal(false);
-        showSnackbar(`No changes made to user "${originalUser.name}".`, 'info'); // Teal blue for no changes
-        return;
+    try {
+      setLoading(true); // Start loading
+      setError(null);
+      if (editingId) {
+        const originalUser = users.find((u) => u.id === editingId);
+        if (
+          originalUser &&
+          originalUser.name === formData.name &&
+          originalUser.email === formData.email &&
+          originalUser.role === formData.role
+        ) {
+          setShowModal(false);
+          setLoading(false); // Stop loading
+          return;
+        }
       }
-    }
 
-    const res: Response = await fetch(endpoint, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-token', // Add the Authorization header
-      },
-      body: JSON.stringify(body),
-    });
+      const user = editingId
+        ? await updateUser({ ...formData, id: editingId })
+        : await addUser(formData);
 
-    if (!res.ok) {
-      console.error('Failed to add/update user:', await res.text());
+      setUsers((prev) =>
+        editingId ? prev.map((u) => (u.id === user.id ? user : u)) : [...prev, user]
+      );
+
+      setFormData({ name: '', email: '', role: '' });
+      setEditingId(null);
+      setShowModal(false);
+
+      if (!editingId) {
+        showSnackbar(`User "${user.name}" added successfully!`, 'success');
+      } else {
+        showSnackbar(`User "${user.name}" updated successfully!`, 'info');
+      }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      setError('Failed to add/update user. Please try again.');
       showSnackbar('Failed to add/update user', 'error');
-      return;
-    }
-
-    const user: User = await res.json();
-
-    setUsers((prev: User[]) => {
-      if (editingId) return prev.map((u: User) => (u.id === user.id ? user : u));
-      return [...prev, user];
-    });
-
-    setFormData({ name: '', email: '', role: '' });
-    setEditingId(null);
-    setShowModal(false);
-
-    // Show snackbar based on operation
-    if (!editingId) {
-      showSnackbar(`User "${user.name}" added successfully!`, 'success'); // Green for add
-    } else {
-      showSnackbar(`User "${user.name}" updated successfully!`, 'info'); // Teal blue for update
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -76,26 +99,21 @@ export default function UserDashboard() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string): Promise<void> => {
-    const userToDelete: User | undefined = users.find((u: User) => u.id === id); // Find the user being deleted
-    const res: Response = await fetch(`/api/users/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-token', // Add the Authorization header
-      },
-    });
+  const handleDelete = async (user: User): Promise<void> => {
+    try {
+      setLoading(true); // Start loading
+      setError(null);
 
-    if (!res.ok) {
-      console.error('Failed to delete user:', await res.text());
+      await deleteUser(user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+
+      showSnackbar(`User "${user.name}" deleted successfully!`, 'warning');
+    } catch (error) {
+      console.error('Error in handleDelete:', error);
+      setError('Failed to delete user. Please try again.');
       showSnackbar('Failed to delete user', 'error');
-      return;
-    }
-
-    setUsers((prev: User[]) => prev.filter((u: User) => u.id !== id));
-
-    if (userToDelete) {
-      showSnackbar(`User "${userToDelete.name}" deleted successfully!`, 'error'); // Red for delete
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -108,17 +126,43 @@ export default function UserDashboard() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">User Management Dashboard</h1>
-      <button onClick={handleAdd} className="mb-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        Add User
-      </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search users..." />
+        <button
+          onClick={handleAdd}
+          className={`bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={loading} // Disable button during loading
+        >
+          {loading ? 'Loading...' : 'Add User'}
+        </button>
+      </div>
 
-      {loading ? (
-        <p className="text-gray-500 text-center mt-4">Loading users...</p>
-      ) : users.length > 0 ? (
-        <UserTable users={users} onEdit={handleEdit} onDelete={handleDelete} />
+      {error && (
+        <div className="mb-4 text-red-600 bg-red-100 border border-red-200 rounded px-4 py-2">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex justify-center items-center mb-4">
+          <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-blue-500"></div>
+          <p className="ml-2 text-blue-500">Loading...</p>
+        </div>
+      )}
+
+      {sortedUsers.length > 0 ? (
+        <UserTable
+          users={sortedUsers}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onSort={handleSort} // Pass sorting handler
+          sortKey={sortKey} // Pass sortKey
+          sortOrder={sortOrder} // Pass sortOrder
+          loading={loading}
+        />
       ) : (
         <p className="text-gray-500 text-center mt-4">
-          No users present. Please select &quot;Add User&quot; to create a new user.
+          No users found. Please adjust your search or add a new user.
         </p>
       )}
 
@@ -133,20 +177,7 @@ export default function UserDashboard() {
         </Modal>
       )}
 
-      {/* Snackbar */}
-      {snackbar && (
-        <div
-          className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded shadow-md ${
-            snackbar.type === 'success'
-              ? 'bg-green-600 text-white'
-              : snackbar.type === 'info'
-              ? 'bg-teal-500 text-white'
-              : 'bg-red-600 text-white'
-          }`}
-        >
-          {snackbar.message}
-        </div>
-      )}
+      {snackbar && <Snackbar message={snackbar.message} type={snackbar.type} />}
     </div>
   );
 }

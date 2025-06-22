@@ -1,10 +1,14 @@
-import UserDashboard from "./components/dashboard/UserDashboard";
+import UserDashboard from "./components/DashBoard/UserDashboard";
+import { readUsers } from "./utils/userStore"; // Adjust path if needed
+import type { User } from "./types/types";
 
-export default function Home() {
+export default async function Home() {
+  // SSR: Fetch users on the server before rendering
+  const users: User[] = await readUsers();
+
   return (
-
     <>
-    <UserDashboard />
+      <UserDashboard initialUsers={users} />
     </>
   );
 }

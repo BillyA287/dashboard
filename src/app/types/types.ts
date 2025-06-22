@@ -5,11 +5,24 @@ export type User = {
   role: string;
 };
 
-export type UserTableProps = {
-  users: User[];
-  onEdit: (user: User) => void; // Add onEdit function
-  onDelete: (id: string) => Promise<void>; // Add onDelete function
+export type UserDashboardProps = {
+  initialUsers?: User[];
 };
+export interface UserTableProps {
+  users: User[];
+  onEdit: (user: User) => void;
+  onDelete: (user: User) => void;
+  onSort: (key: keyof User) => void;
+  sortKey: keyof User;
+  sortOrder: 'asc' | 'desc';
+  loading: boolean;
+}
+
+export type UserRowProps = {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (id: string) => void;
+}
 
 export type UserFormProps = {
   formData: Omit<User, 'id'>; 
@@ -25,3 +38,15 @@ export type ModalProps = {
   onSubmit: (user: User) => void;
 children: React.ReactNode;
 };
+
+export type SnackbarProps = {
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+};
+
+
+export type SortProps = {
+  sortKey: string;
+  sortOrder: 'asc' | 'desc';
+  onSort: (key: string) => void;
+}
