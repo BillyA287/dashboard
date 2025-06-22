@@ -7,8 +7,8 @@ export type User = {
 
 export type UserTableProps = {
   users: User[];
-  onEdit: (user: User) => void;
-  onDelete: (id: string) => void;
+  onEdit: (user: User) => void; // Add onEdit function
+  onDelete: (id: string) => Promise<void>; // Add onDelete function
 };
 
 export type UserFormProps = {

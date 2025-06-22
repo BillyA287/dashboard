@@ -1,53 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import UserTable from './UserTable';
-import UserForm from './UserForm';
-import Modal from './Modal';
+import { useState } from 'react';
+import UserTable from './userTable';
+import UserForm from './userForm';
+import Modal from './modal';
+import { useUsers } from '../../hooks/useUsers';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import type { User } from '../../types/types';
 
 export default function UserDashboard() {
-  const [users, setUsers] = useState<User[]>([]);
+  const { users, setUsers, loading } = useUsers(); // Use the custom hook for fetching users
+  const { snackbar, showSnackbar } = useSnackbar(); // Use the custom hook for snackbar notifications
   const [formData, setFormData] = useState<Omit<User, 'id'>>({ name: '', email: '', role: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(null); // Snackbar state
+  const [showModal, setShowModal] = useState<boolean>(false);
 
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching users:', err);
-        setLoading(false);
-      });
-  }, []);
-
-  const handleSubmit = async () => {
-    const method = editingId ? 'PUT' : 'POST';
-    const body = editingId ? { ...formData, id: editingId } : formData;
+  const handleSubmit = async (): Promise<void> => {
+    const method: 'PUT' | 'POST' = editingId ? 'PUT' : 'POST';
+    const endpoint = editingId ? `/api/users/${editingId}` : '/api/users'; // Use the correct endpoint
+    const body: User | Omit<User, 'id'> = editingId ? { ...formData, id: editingId } : formData;
 
     // Check if the user details have changed
     if (editingId) {
-      const originalUser = users.find(u => u.id === editingId);
+      const originalUser: User | undefined = users.find((u: User) => u.id === editingId);
       if (
         originalUser &&
         originalUser.name === formData.name &&
         originalUser.email === formData.email &&
         originalUser.role === formData.role
       ) {
-        // No changes detected, do not show snackbar or update state
+        // No changes detected
         setShowModal(false);
+        showSnackbar(`No changes made to user "${originalUser.name}".`, 'info'); // Teal blue for no changes
         return;
       }
     }
 
-    const res = await fetch('/api/users', {
+    const res: Response = await fetch(endpoint, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -58,13 +47,14 @@ export default function UserDashboard() {
 
     if (!res.ok) {
       console.error('Failed to add/update user:', await res.text());
+      showSnackbar('Failed to add/update user', 'error');
       return;
     }
 
-    const user = await res.json();
+    const user: User = await res.json();
 
-    setUsers(prev => {
-      if (editingId) return prev.map(u => (u.id === user.id ? user : u));
+    setUsers((prev: User[]) => {
+      if (editingId) return prev.map((u: User) => (u.id === user.id ? user : u));
       return [...prev, user];
     });
 
@@ -72,44 +62,44 @@ export default function UserDashboard() {
     setEditingId(null);
     setShowModal(false);
 
-    // Show snackbar for add/update
-    setSnackbar({
-      message: editingId ? `User "${user.name}" updated successfully!` : `User "${user.name}" added successfully!`,
-      type: 'success',
-    });
-    setTimeout(() => setSnackbar(null), 3000); // Auto-hide after 3 seconds
+    // Show snackbar based on operation
+    if (!editingId) {
+      showSnackbar(`User "${user.name}" added successfully!`, 'success'); // Green for add
+    } else {
+      showSnackbar(`User "${user.name}" updated successfully!`, 'info'); // Teal blue for update
+    }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: User): void => {
     setFormData({ name: user.name, email: user.email, role: user.role });
     setEditingId(user.id);
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    const userToDelete = users.find(u => u.id === id); // Find the user being deleted
-    await fetch('/api/users', {
+  const handleDelete = async (id: string): Promise<void> => {
+    const userToDelete: User | undefined = users.find((u: User) => u.id === id); // Find the user being deleted
+    const res: Response = await fetch(`/api/users/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer test-token', // Add the Authorization header
       },
-      body: JSON.stringify({ id }),
     });
 
-    setUsers(prev => prev.filter(u => u.id !== id));
+    if (!res.ok) {
+      console.error('Failed to delete user:', await res.text());
+      showSnackbar('Failed to delete user', 'error');
+      return;
+    }
 
-    // Show snackbar for delete
+    setUsers((prev: User[]) => prev.filter((u: User) => u.id !== id));
+
     if (userToDelete) {
-      setSnackbar({
-        message: `User "${userToDelete.name}" deleted successfully!`,
-        type: 'error',
-      });
-      setTimeout(() => setSnackbar(null), 3000); // Auto-hide after 3 seconds
+      showSnackbar(`User "${userToDelete.name}" deleted successfully!`, 'error'); // Red for delete
     }
   };
 
-  const handleAdd = () => {
+  const handleAdd = (): void => {
     setFormData({ name: '', email: '', role: '' });
     setEditingId(null);
     setShowModal(true);
@@ -147,7 +137,11 @@ export default function UserDashboard() {
       {snackbar && (
         <div
           className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded shadow-md ${
-            snackbar.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+            snackbar.type === 'success'
+              ? 'bg-green-600 text-white'
+              : snackbar.type === 'info'
+              ? 'bg-teal-500 text-white'
+              : 'bg-red-600 text-white'
           }`}
         >
           {snackbar.message}

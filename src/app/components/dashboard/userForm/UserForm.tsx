@@ -1,5 +1,7 @@
 import React from 'react';
-import type { UserFormProps } from '../../types/types'; 
+import type { UserFormProps } from '../../../types/types'; 
+import { validateUserForm } from '../../../utils/validateForm';
+
 
 const UserForm: React.FC<UserFormProps> = ({
   formData,
@@ -15,9 +17,14 @@ const UserForm: React.FC<UserFormProps> = ({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit();
-  };
+  e.preventDefault();
+  const error = validateUserForm(formData);
+  if (error) {
+    alert(error); // Show validation error
+    return;
+  }
+  onSubmit();
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

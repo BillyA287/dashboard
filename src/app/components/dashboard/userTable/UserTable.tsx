@@ -1,5 +1,5 @@
 import React from 'react';
-import type { UserTableProps } from '../../types/types';
+import type { UserTableProps } from '../../../types/types';
 
 const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete }) => {
   return (
@@ -23,13 +23,13 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete }) => {
                 <div className="flex flex-row space-x-4">
                   <button
                     className="flex items-center text-blue-500 no-underline transition-transform transform hover:scale-105"
-                    onClick={() => onEdit(user)}
+                    onClick={() => onEdit(user)} // Use onEdit prop
                   >
                     ✏️ Edit
                   </button>
                   <button
                     className="flex items-center text-red-500 no-underline transition-transform transform hover:scale-105"
-                    onClick={() => onDelete(user.id)}
+                    onClick={() => onDelete(user.id)} // Use onDelete prop
                   >
                     🗑️ Delete
                   </button>
