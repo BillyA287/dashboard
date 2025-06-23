@@ -11,11 +11,12 @@ export type UserDashboardProps = {
 export interface UserTableProps {
   users: User[];
   onEdit: (user: User) => void;
-  onDelete: (user: User) => void;
+  onDelete: (user: User) => Promise<void>;
   onSort: (key: keyof User) => void;
   sortKey: keyof User;
   sortOrder: 'asc' | 'desc';
   loading: boolean;
+  deletingId: string | null;
 }
 
 export type UserRowProps = {

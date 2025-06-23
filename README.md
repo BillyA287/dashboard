@@ -12,6 +12,7 @@ This is a **User Management Dashboard** built with [Next.js](https://nextjs.org)
 - **Delete User**: Removes users from the list with visual feedback.
 - **Search and Filter**: Filters users by name, email, or role.
 - **Sort Users**: Sorts users by name, email, or role in ascending or descending order.
+- **Search and Sort Added Users**: Users added to the table can be searched through or sorted by column.
 - **Visual Feedback**: Provides loading indicators and snackbar notifications for user actions.
 
 ---
@@ -80,7 +81,8 @@ Testing is currently out of scope for this project, but as the app grows, I woul
   - Implement authentication and authorization in your API routes to ensure only permitted users can access or modify user data.
 - Regularly audit your deployment and server configuration to ensure no sensitive files are exposed.
 
+---
+
 ## Deployment
 
 The easiest way to deploy this Next.js app is using [Vercel](https://vercel.com). Follow the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-

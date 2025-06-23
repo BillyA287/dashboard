@@ -1,30 +1,29 @@
 import React from 'react';
-import type { UserFormProps } from '../../../types/types'; 
+import type { UserFormProps } from '../../../types/types';
 import { validateUserForm } from '../../../utils/validateForm';
-
 
 const UserForm: React.FC<UserFormProps> = ({
   formData,
   setFormData,
   onSubmit,
-  editing
+  editing,
 }) => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  const error = validateUserForm(formData);
-  if (error) {
-    alert(error); // Show validation error
-    return;
-  }
-  onSubmit();
-};
+    e.preventDefault();
+    const error = validateUserForm(formData);
+    if (error) {
+      alert(error); // Show validation error
+      return;
+    }
+    onSubmit();
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -35,6 +34,7 @@ const UserForm: React.FC<UserFormProps> = ({
           name="name"
           value={formData.name}
           onChange={handleChange}
+          placeholder="Enter user's name" // Placeholder text
           required
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
         />
@@ -46,6 +46,7 @@ const UserForm: React.FC<UserFormProps> = ({
           name="email"
           value={formData.email}
           onChange={handleChange}
+          placeholder="Enter user's email" // Placeholder text
           required
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
         />
@@ -59,7 +60,9 @@ const UserForm: React.FC<UserFormProps> = ({
           required
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50"
         >
-          <option value="" disabled>Select Role</option> 
+          <option value="" disabled>
+            Select Role
+          </option>
           <option value="Owner">Owner</option>
           <option value="Admin">Admin</option>
           <option value="User">User</option>

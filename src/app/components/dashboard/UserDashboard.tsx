@@ -13,16 +13,16 @@ import type { User, UserDashboardProps } from '../../types/types';
 export default function UserDashboard({ initialUsers = [] }: UserDashboardProps) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState<keyof User>('name'); // Sorting state
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Sorting state
+  const [sortKey, setSortKey] = useState<keyof User>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { snackbar, showSnackbar } = useSnackbar();
   const [formData, setFormData] = useState<Omit<User, 'id'>>({ name: '', email: '', role: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [loading, setLoading] = useState<boolean>(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null); // NEW
 
-  // Filter users based on search
   const filteredUsers: User[] = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,11 +30,9 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Sort users based on sortKey and sortOrder
   const sortedUsers: User[] = [...filteredUsers].sort((a, b) => {
     const valueA = a[sortKey].toLowerCase();
     const valueB = b[sortKey].toLowerCase();
-
     if (valueA < valueB) return sortOrder === 'asc' ? -1 : 1;
     if (valueA > valueB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
@@ -51,7 +49,7 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
 
   const handleSubmit = async (): Promise<void> => {
     try {
-      setLoading(true); // Start loading
+      setLoading(true);
       setError(null);
       if (editingId) {
         const originalUser = users.find((u) => u.id === editingId);
@@ -62,7 +60,7 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
           originalUser.role === formData.role
         ) {
           setShowModal(false);
-          setLoading(false); // Stop loading
+          setLoading(false);
           return;
         }
       }
@@ -89,7 +87,7 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
       setError('Failed to add/update user. Please try again.');
       showSnackbar('Failed to add/update user', 'error');
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
@@ -101,19 +99,24 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
 
   const handleDelete = async (user: User): Promise<void> => {
     try {
-      setLoading(true); // Start loading
+      setDeletingId(user.id); // Start fade-out
+      setLoading(true);
       setError(null);
 
       await deleteUser(user.id);
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
 
-      showSnackbar(`User "${user.name}" deleted successfully!`, 'warning');
+      setTimeout(() => {
+        setUsers((prev) => prev.filter((u) => u.id !== user.id));
+        setDeletingId(null);
+        setLoading(false);
+        showSnackbar(`User "${user.name}" deleted successfully!`, 'warning');
+      }, 400); // Match animation duration
     } catch (error) {
+      setDeletingId(null);
+      setLoading(false);
       console.error('Error in handleDelete:', error);
       setError('Failed to delete user. Please try again.');
       showSnackbar('Failed to delete user', 'error');
-    } finally {
-      setLoading(false); // Stop loading
     }
   };
 
@@ -131,7 +134,7 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
         <button
           onClick={handleAdd}
           className={`bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={loading} // Disable button during loading
+          disabled={loading}
         >
           {loading ? 'Loading...' : 'Add User'}
         </button>
@@ -155,10 +158,11 @@ export default function UserDashboard({ initialUsers = [] }: UserDashboardProps)
           users={sortedUsers}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onSort={handleSort} // Pass sorting handler
-          sortKey={sortKey} // Pass sortKey
-          sortOrder={sortOrder} // Pass sortOrder
+          onSort={handleSort}
+          sortKey={sortKey}
+          sortOrder={sortOrder}
           loading={loading}
+          deletingId={deletingId} // Pass deletingId
         />
       ) : (
         <p className="text-gray-500 text-center mt-4">
