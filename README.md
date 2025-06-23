@@ -83,6 +83,34 @@ Testing is currently out of scope for this project, but as the app grows, I woul
 
 ---
 
+## Data Persistence
+
+Currently, the app uses a local JSON file (`users.json`) stored in the `data/` directory to manage user data. This approach works well for development and small-scale applications but has limitations in production environments:
+
+1. **Ephemeral File Systems**:  
+   Platforms like Vercel and Render use ephemeral file systems, meaning any changes made to the `users.json` file during runtime are lost when the server restarts or redeploys.
+
+2. **No Multi-User Support**:  
+   The JSON file is local to the server and does not support concurrent updates or multi-user environments.
+
+### Future Improvements for Persistent Data
+
+To ensure data persists across page refreshes and deployments, the following approaches can be implemented:
+
+1. **Database Integration**:  
+   - Use a cloud-hosted database (e.g., PostgreSQL, MongoDB, or MySQL) to store user data.
+   - API routes (`/api/users`) will handle CRUD operations by interacting with the database.
+   - This ensures data persistence across app restarts and supports multi-user environments.
+
+2. **Hosted JSON API**:  
+   - Use a hosted JSON API service (e.g., Firebase, Supabase, or JSONBin) to store user data.
+   - The app will fetch and update user data dynamically via API calls.
+
+3. **Fallback to Local JSON File**:  
+   - For simpler deployments, user data can continue to be stored in a JSON file (`users.json`) in the server's file system. However, this approach is less scalable and suitable for small-scale apps.
+
+---
+
 ## Deployment
 
 The easiest way to deploy this Next.js app is using [Vercel](https://vercel.com). Follow the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
