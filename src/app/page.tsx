@@ -1,5 +1,5 @@
-import UserDashboard from "./components/DashBoard/UserDashboard";
-import { readUsers } from "./utils/userStore"; // Adjust path if needed
+import UserDashBoard from "./components/DashBoard/UserDashboard";
+import { readUsers } from "./utils/userStore"; 
 import type { User } from "./types/types";
 
 export default async function Home() {
@@ -8,7 +8,7 @@ export default async function Home() {
 
   return (
     <>
-      <UserDashboard initialUsers={users} />
+      <UserDashBoard initialUsers={users} />
     </>
   );
 }
