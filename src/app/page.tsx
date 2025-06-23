@@ -1,4 +1,4 @@
-import UserDashBoard from "./components/DashBoard/UserDashboard";
+import UserDashBoard from "./components/DashBoard/UserDashBoard";
 import { readUsers } from "./utils/userStore"; 
 import type { User } from "./types/types";
 
